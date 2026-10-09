@@ -11,6 +11,7 @@
 <style>
 :root{--ink:#0d2226;--ink2:#3d5257;--paper:#f3efe6;--paper2:#e8e1d2;--line:rgba(13,34,38,.14);--water:#1f6f8b;--deep:#123f4d;--high:#c8402a;--mid:#d9821a;--low:#d8b73a;--ok:#2f7d5b;--serif:'Bricolage Grotesque',system-ui,sans-serif;--sans:'IBM Plex Sans',system-ui,sans-serif;--mono:'IBM Plex Mono',ui-monospace,monospace}
 *{box-sizing:border-box}
+html,body{overflow-x:clip}
 body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.55 var(--sans);-webkit-font-smoothing:antialiased}
 a{color:var(--water)}a:hover{color:var(--deep)}
 h1,h2,h3{font-family:var(--serif);font-weight:600;letter-spacing:-.02em;margin:0;text-wrap:balance}
@@ -71,6 +72,7 @@ header .wrap{display:flex;align-items:center;gap:28px;height:68px}
 .legend{position:absolute;z-index:500;right:max(32px,calc((100vw - 1240px)/2 + 32px));bottom:32px;background:var(--paper);border-radius:14px;padding:14px 16px;box-shadow:0 0 0 1px var(--line),0 10px 30px -10px rgba(13,34,38,.3);display:grid;gap:8px;font-size:13px;min-width:220px}
 .legend div{display:flex;align-items:center;gap:10px}
 .legend b{width:14px;height:14px;border-radius:4px;display:block}
+.legend-btn{display:none}
 .legend .note{color:var(--ink2);font-size:11px;border-top:1px solid var(--line);padding-top:8px;margin-top:2px;max-width:230px;display:block}
 .toggle{display:flex;gap:4px;background:var(--paper2);border-radius:999px;padding:3px}
 .toggle button{flex:1;border:0;background:none;border-radius:999px;padding:4px 10px;font-size:12px;font-weight:500;color:var(--ink2)}
@@ -244,11 +246,29 @@ footer .wrap{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap}
  .hero{height:auto;min-height:0;display:flex;flex-direction:column-reverse}
  #map{position:relative;height:420px}
  .hero-panel{position:relative;top:0;left:0;width:auto;max-width:none;margin:16px}
- .legend{right:16px;bottom:auto;top:16px}
+ .legend{display:none;left:16px;right:16px;bottom:68px;min-width:0}
+ .legend.open{display:grid}
+ .legend .note{max-width:none}
+ .legend-btn{display:flex;align-items:center;gap:8px;position:absolute;z-index:500;left:16px;bottom:16px;background:var(--paper);color:var(--ink);border:0;border-radius:999px;padding:10px 16px;font-weight:600;font-size:14px;box-shadow:0 0 0 1px var(--line),0 10px 30px -10px rgba(13,34,38,.3)}
+ .legend-btn i{width:12px;height:12px;border-radius:3px;background:#5aa0d6}
+ .legend-btn[aria-expanded=true]{background:var(--ink);color:var(--paper)}
  .items{grid-template-columns:1fr}
  .mapcard{min-height:440px}
  .form{position:static}
  .keys{display:none}
+}
+@media (max-width:600px){
+ .wrap{padding:0 16px}
+ header .wrap{gap:12px}
+ header .wrap>.btn{display:none}
+ .flow{justify-content:flex-end}
+ .steps,.track{grid-template-columns:1fr}
+ .track div{border-right:0;border-bottom:1px solid var(--line)}
+}
+@media (max-width:380px){
+ .flow{gap:0}
+ .flow button{padding:4px}
+ .ffwd,.ffwd .btn{max-width:100%;white-space:normal}
 }
 </style>
 </head>
@@ -296,7 +316,8 @@ footer .wrap{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap}
     </div>
    </div>
   </div>
-  <div class="legend">
+  <button class="legend-btn" id="legend-btn" aria-expanded="false" aria-controls="legend" onclick="toggleLegend()"><i></i>Flomsoner</button>
+  <div class="legend" id="legend">
    <span class="mono" style="font-size:11px;color:var(--ink2)">Flomsoner · NVE / Geonorge</span>
    <div class="toggle" id="rp">
     <button data-rp="20" onclick="setRP('20')">20-år</button><button data-rp="200" class="on" onclick="setRP('200')">200-år</button><button data-rp="klima" onclick="setRP('klima')">År 2100</button>
@@ -464,11 +485,19 @@ footer .wrap{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap}
   <div class="grid">
    <div class="col">
     <div class="card">
-     <div class="card-h"><h2>Beredskapsplan</h2>
-      <div class="tabs" id="phase"><button class="on" onclick="phase(0)">Før</button><button onclick="phase(1)">Under</button><button onclick="phase(2)">Etter</button></div>
+     <div class="card-h"><h2>Fra befaringen</h2><span class="mono" style="font-size:11px;color:var(--ok)">● Testet 16. okt</span></div>
+     <div id="mini"></div>
+     <div class="kit">
+      <div><strong id="k-bar">140 m</strong><span>barriere</span></div>
+      <div><strong id="k-el">140</strong><span>elementer à 1 m</span></div>
+      <div><strong id="k-time">1 t 40</strong><span>oppsett i test</span></div>
      </div>
-     <div class="prog"><span id="prog-t"></span><div class="bar"><i id="prog-b" style="width:0"></i></div></div>
-     <div id="tasks"></div>
+     <div class="findings" style="margin-top:16px">
+      <div class="fnd"><i style="background:var(--ok)">✓</i><span>Barrieren holdt 0,8 m vannstand i testen</span></div>
+      <div class="fnd"><i style="background:var(--mid)">!</i><span>To sluk i Brandvalvegen må tettes med plugger ved varsel</span></div>
+      <div class="fnd"><i style="background:var(--mid)">!</i><span>Kjellervinduer i nr. 21–29 ligger lavest</span></div>
+     </div>
+     <div class="meet"><b>Utstyr:</b> lagres i nærheten · leveres til Brandvalvegen 1 ved varsel</div>
     </div>
     <div class="card">
      <div class="card-h"><h2>Det viktigste for deg</h2><span class="mono" style="font-size:11px;color:var(--ink2)">Reddes først</span></div>
@@ -487,19 +516,11 @@ footer .wrap{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap}
      <div id="nbs"></div>
     </div>
     <div class="card">
-     <div class="card-h"><h2>Fra befaringen</h2><span class="mono" style="font-size:11px;color:var(--ok)">● Testet 16. okt</span></div>
-     <div id="mini"></div>
-     <div class="kit">
-      <div><strong id="k-bar">140 m</strong><span>barriere</span></div>
-      <div><strong id="k-el">140</strong><span>elementer à 1 m</span></div>
-      <div><strong id="k-time">1 t 40</strong><span>oppsett i test</span></div>
+     <div class="card-h"><h2>Beredskapsplan</h2>
+      <div class="tabs" id="phase"><button class="on" onclick="phase(0)">Før</button><button onclick="phase(1)">Under</button><button onclick="phase(2)">Etter</button></div>
      </div>
-     <div class="findings" style="margin-top:16px">
-      <div class="fnd"><i style="background:var(--ok)">✓</i><span>Barrieren holdt 0,8 m vannstand i testen</span></div>
-      <div class="fnd"><i style="background:var(--mid)">!</i><span>To sluk i Brandvalvegen må tettes med plugger ved varsel</span></div>
-      <div class="fnd"><i style="background:var(--mid)">!</i><span>Kjellervinduer i nr. 21–29 ligger lavest</span></div>
-     </div>
-     <div class="meet"><b>Utstyr:</b> lagres i nærheten · leveres til Brandvalvegen 1 ved varsel</div>
+     <div class="prog"><span id="prog-t"></span><div class="bar"><i id="prog-b" style="width:0"></i></div></div>
+     <div id="tasks"></div>
     </div>
    </div>
   </div>
@@ -537,6 +558,7 @@ function initMap(){
  map.on('click',e=>check(e.latlng,null));
  if(innerWidth>900)map.panBy([-200,0],{animate:false});
 }
+function toggleLegend(){const o=$('legend').classList.toggle('open');$('legend-btn').setAttribute('aria-expanded',o)}
 function setRP(v){rp=v;[...$('rp').children].forEach(b=>b.classList.toggle('on',b.dataset.rp===v));
  if(nveLayer)nveLayer.setParams({layers:LAYER[v]});
  $('legend-note').textContent={'20':'Flom som i snitt kommer hvert 20. år.','200':'Offisielle flomsoner fra NVE. Ikke alle områder er kartlagt.','klima':'200-årsflom i år 2100, med klimapåslag.'}[v];
@@ -617,7 +639,6 @@ function geom(){
  let A=0,P=0;for(let i=0;i<xy.length;i++){const [x1,y1]=xy[i],[x2,y2]=xy[(i+1)%xy.length];A+=x1*y2-x2*y1;P+=Math.hypot(x2-x1,y2-y1)}
  return{area:Math.abs(A)/2,per:P};
 }
-const pp=n=>Math.round(5200/n+48);
 const PRICE=199;
 function estimate(){
  const n=+$('hh').value;state.hh=n;$('hh-v').textContent=n;
@@ -629,7 +650,7 @@ function estimate(){
  state.bar=bar;state.helpers=helpers;state.mins=mins;
  $('e-bar').textContent=bar+' m';$('e-el').textContent=bar;
  $('e-time').textContent=fmtT(mins);$('e-help').textContent=helpers;
- $('e-tot').textContent=n<10?`Trenger ${10-n} til for oppstart`:`${(PRICE*n).toLocaleString('no')} kr/mnd for nabolaget`;
+ $('e-tot').textContent=n<10?`Trenger ${10-n} til for oppstart`:'';
  $('to-visit').disabled=false;
 }
 
